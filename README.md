@@ -173,6 +173,36 @@ Scales from 0 to millions of users without changing plans.
 
 ---
 
+## Roadmap
+
+### Collective memory _(coming soon)_
+
+App-level memory extracted across all your users — controlled by the developer. Surfaces patterns, preferences, and aggregate signals from every conversation.
+
+```python
+# Per-user memory (available now)
+context = mem.get("user_123", query=user_message)
+
+# Collective memory (coming soon) — app-level, across all users
+collective = mem.collective.get(query="what do most users ask about?")
+
+# Combine both for maximum context
+prompt = f"{collective}\n\n{context}\n\nUser: {user_message}"
+```
+
+Example use cases:
+- E-commerce: "Most users abandon when shipping exceeds $15" → surface proactively
+- Support bots: common issues extracted from all past conversations
+- Coding assistants: patterns from your entire dev user base
+
+### Memory dashboard _(coming soon)_
+Web UI to browse, inspect, and manage memories per user. Debug extraction quality, delete stale entries.
+
+### Memory analytics _(coming soon)_
+Retrieval hit rates, memory growth, most-recalled facts per user.
+
+---
+
 ## Status
 
 Currently in **early access**. We're onboarding developers now.
