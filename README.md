@@ -124,6 +124,26 @@ getmem is what you'd build after 3 months of iteration — extraction, deduplica
 
 ---
 
+## Performance
+
+| Operation | Latency | Notes |
+|---|---|---|
+| `mem.get()` | **< 100ms** | Vector search + graph + context formatting. Invisible in any prompt pipeline. |
+| `mem.ingest()` | 0.5–3s | LLM extraction pass. Always async — user never waits. |
+
+**The right pattern:**
+
+```python
+# User gets response immediately — no wait
+response = llm.call(f"{context}\n\nUser: {user_message}")
+send_to_user(response)
+
+# Ingest fires async after — user never sees this latency
+await mem.ingest(user_id, messages=messages)
+```
+
+`mem.get()` is on the critical path and is fast. `mem.ingest()` is off the critical path and runs in the background. Users experience zero added latency.
+
 ## Architecture
 
 - **Extraction layer** — LLM pass on raw messages, pulls out facts, preferences, entities
