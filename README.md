@@ -199,7 +199,7 @@ Example use cases:
 Developer UI to monitor usage, costs, and extraction quality across your app. Track storage growth and retrieval performance — without exposing individual user memory content.
 
 ### Memory analytics _(coming soon)_
-Retrieval hit rates, memory growth, most-recalled facts per user.
+Retrieval hit rates, memory growth over time, memory category breakdown (preferences, technical context, personal details). Operational insight without exposing user content.
 
 ---
 
