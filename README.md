@@ -4,6 +4,15 @@
 
 **[Join the waitlist →](https://getmem.ai)**
 
+## Install
+
+```bash
+pip install getmem-ai
+```
+```bash
+npm install getmem-ai
+```
+
 ---
 
 ## The problem
@@ -21,7 +30,7 @@ getmem solves all of this in 2 lines. Send the raw conversation — getmem figur
 ## How it works
 
 ```python
-import getmem
+import getmem_ai as getmem
 
 mem = getmem.init("gm_your_api_key")
 
@@ -45,7 +54,7 @@ Works with **any framework** — LangChain, LlamaIndex, raw API calls, or your o
 ## JavaScript / TypeScript
 
 ```typescript
-import getmem from 'getmem'
+import getmem from 'getmem-ai'
 
 const mem = getmem.init('gm_your_api_key')
 
