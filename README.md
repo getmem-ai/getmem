@@ -173,35 +173,6 @@ await mem.ingest(user_id, messages=messages)
 
 ---
 
-## Pricing
-
-**14-day free trial — no card required.**
-
-After that, pay-as-you-go with automatic volume discounts:
-
-**mem.ingest()** — LLM extraction + storage
-| Volume/month | Price/call |
-|---|---|
-| 0 – 10k | $0.0020 |
-| 10k – 100k | $0.0016 |
-| 100k – 1M | $0.0012 |
-| 1M+ | $0.0008 |
-
-**mem.get()** — context retrieval
-| Volume/month | Price/call |
-|---|---|
-| 0 – 30k | $0.0005 |
-| 30k – 300k | $0.0004 |
-| 300k – 3M | $0.0003 |
-| 3M+ | $0.0002 |
-
-- No retrieval caps (unlike competitors)
-- `mem.list()` and `mem.delete()` always free
-- Full usage logs — every call auditable
-- **Beta rate lock** — join the waitlist and your rates are locked in permanently
-
-Enterprise? [hello@getmem.ai](mailto:hello@getmem.ai)
-
 ---
 
 ## Roadmap
