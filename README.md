@@ -1,223 +1,169 @@
-# getmem.ai — Persistent Memory for AI Agents
+# getmem-ai
 
-> Your AI agent remembers everything. Send raw messages, get back context. 2 lines of code.
+Persistent memory API for AI agents. Two API calls — your agent remembers everything.
 
-**[Join the waitlist →](https://getmem.ai)**
+[![PyPI version](https://img.shields.io/pypi/v/getmem-ai.svg)](https://pypi.org/project/getmem-ai/)
+[![Python](https://img.shields.io/pypi/pyversions/getmem-ai.svg)](https://pypi.org/project/getmem-ai/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ## Install
 
 ```bash
 pip install getmem-ai
 ```
-```bash
-npm install getmem-ai
-```
 
----
-
-## The problem
-
-Every time a user starts a new session with your AI agent, it remembers nothing. You work around it by:
-
-- Dumping entire chat history into the context (breaks at scale, burns tokens)
-- Building custom RAG pipelines (weeks of work, unreliable retrieval)
-- Manually deciding what to save and writing extraction logic yourself
-
-getmem solves all of this in 2 lines. Send the raw conversation — getmem figures out what to remember.
-
----
-
-## How it works
+## Quick Start
 
 ```python
 import getmem_ai as getmem
 
-mem = getmem.init("gm_your_api_key")
+mem = getmem.init("gm_live_...")
 
-# After each turn — send raw messages, we extract what matters automatically
-mem.ingest("user_123", messages=messages)
+# Before each LLM call — get relevant context
+result = mem.get("user_123", query=user_message)
+context = result["context"]  # inject into system prompt
 
-# Before each turn — get the right context
-context = mem.get("user_123", query=user_message)
-
-# Use it
-prompt = f"{context}\n\nUser: {user_message}"
+# After each turn — save conversation to memory
+mem.ingest("user_123", messages=[
+    {"role": "user", "content": user_message},
+    {"role": "assistant", "content": reply},
+])
 ```
 
-That's it. You never write extraction logic. getmem runs an internal LLM pass on each `ingest()` call, extracts what's worth keeping, deduplicates against existing memories, and stores it. The developer just sends the raw conversation.
-
-Works with **any LLM** — OpenAI, Anthropic Claude, Google Gemini, Mistral, or any local model.  
-Works with **any framework** — LangChain, LlamaIndex, raw API calls, or your own stack.
-
----
-
-## JavaScript / TypeScript
-
-```typescript
-import getmem from 'getmem-ai'
-
-const mem = getmem.init('gm_your_api_key')
-
-// After each turn
-await mem.ingest('user_123', { messages })
-
-// Before each turn
-const context = await mem.get('user_123', { query: userMessage })
-
-const response = await openai.chat.completions.create({
-  messages: [
-    { role: 'system', content: context },
-    { role: 'user', content: userMessage }
-  ]
-})
-```
-
----
-
-## API reference
+## Usage with OpenAI
 
 ```python
-# Initialize
-mem = getmem.init("gm_your_api_key")
+import getmem_ai as getmem
+from openai import OpenAI
 
-# Ingest a conversation turn — extraction happens automatically
-mem.ingest(user_id: str, messages: List[dict]) -> None
+mem = getmem.init("gm_live_...")
+openai = OpenAI(api_key="sk-...")
 
-# Retrieve relevant context for a query
-mem.get(user_id: str, query: str) -> str  # formatted context string, ready for prompt
+user_id = "user_123"
+user_message = "Tell me something about my preferences"
 
-# List all memories for a user
-mem.list(user_id: str) -> List[Memory]
+# 1. Get memory context
+result = mem.get(user_id, query=user_message)
+context = result["context"]
 
-# Delete a specific memory
-mem.delete(user_id: str, id: int) -> None
+# 2. Call LLM with memory injected
+completion = openai.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": f"You are a helpful assistant.\n\n## Memory\n{context}"},
+        {"role": "user", "content": user_message},
+    ]
+)
+reply = completion.choices[0].message.content
 
-# Delete all memories for a user
-mem.delete(user_id: str) -> None
+# 3. Save conversation back to memory
+mem.ingest_conversation(user_id, user_message, reply)
 ```
 
-### What `messages` looks like
+## API Reference
 
-Standard OpenAI message format:
+### `getmem.init(api_key, base_url=None, timeout=30, max_retries=3)`
+
+Returns a `GetMem` client instance.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `api_key` | `str` | *required* | Your getmem API key |
+| `base_url` | `str` | `https://memory.getmem.ai` | API base URL |
+| `timeout` | `int` | `30` | Request timeout in seconds |
+| `max_retries` | `int` | `3` | Max retries for retryable errors |
+
+### `mem.get(user_id, query)` → dict
+
+Retrieve relevant memory context. Returns:
 
 ```python
-messages = [
-    {"role": "user", "content": "I'm building a Python FastAPI service on AWS..."},
-    {"role": "assistant", "content": "Got it, here's how I'd structure that..."}
-]
-
-mem.ingest("user_123", messages=messages)
-# getmem extracts: "User is building a Python FastAPI service on AWS"
-# Stores it. Deduplicates. Done.
+{
+    "context": str,      # ready for LLM system prompt
+    "memories": list,    # individual items with relevance scores
+    "meta": dict,        # timings, token count, entities
+}
 ```
 
----
+### `mem.ingest(user_id, messages, session_id=None)` → dict
 
-## Why not just build it yourself?
-
-Most developers start by rolling their own: dump chat history into a DB, retrieve by recency or keyword, maybe add a vector search. It works until it doesn't — context limits, stale memories, no entity resolution, retrieval that returns the wrong thing.
-
-getmem is what you'd build after 3 months of iteration — extraction, deduplication, graph relationships, intelligent context selection — available in 2 lines from day one.
-
-| | **getmem.ai** | Build it yourself |
-|---|---|---|
-| Integration time | **< 2 min** | Days |
-| Automatic extraction from messages | ✅ | You build it |
-| Intelligent context selection | ✅ | You build it |
-| Graph memory | ✅ | You build it |
-| Per-user isolation | ✅ | Manual |
-| Ongoing maintenance | None | Yours forever |
-| Cost | Pay-per-use | Infra + eng time |
-
-<!-- For developers looking for alternatives to Mem0, Zep, or other memory libraries: getmem.ai offers automatic extraction from raw messages, pay-per-use pricing, and 2-line integration vs the ~15 lines required by Mem0. -->
-
----
-
-## Performance
-
-| Operation | Latency | Notes |
-|---|---|---|
-| `mem.get()` | **< 100ms** | Vector search + graph + context formatting. Invisible in any prompt pipeline. |
-| `mem.ingest()` | 0.5–3s | LLM extraction pass. Always async — user never waits. |
-
-**The right pattern:**
+Ingest raw messages into memory. Returns immediately — extraction is async.
 
 ```python
-# User gets response immediately — no wait
-response = llm.call(f"{context}\n\nUser: {user_message}")
-send_to_user(response)
-
-# Ingest fires async after — user never sees this latency
-await mem.ingest(user_id, messages=messages)
+mem.ingest("user_123", [
+    {"role": "user", "content": "I love hiking", "timestamp": "2026-04-17T10:00:00Z"},
+    {"role": "assistant", "content": "Great hobby!", "timestamp": "2026-04-17T10:00:01Z"},
+])
 ```
 
-`mem.get()` is on the critical path and is fast. `mem.ingest()` is off the critical path and runs in the background. Users experience zero added latency.
+### `mem.ingest_conversation(user_id, user_message, assistant_message, session_id=None)` → dict
 
-## Architecture
-
-- **Extraction layer** — LLM pass on raw messages, pulls out facts, preferences, entities
-- **Graph layer** (Neo4j) — entity relationships and knowledge graph
-- **Vector layer** (Qdrant) — semantic similarity search across all memories  
-- **Metadata layer** (PostgreSQL) — user management, billing, audit logs
-- **Context builder** — selects and ranks the most relevant memories for each query
-
----
-
-## Use cases
-
-- **Customer support bots** — remember account history, past issues, preferences  
-- **Coding assistants** — remember stack, coding style, project context  
-- **Personal AI assistants** — remember preferences, relationships, ongoing tasks  
-- **Sales bots** — remember company info, previous conversations, deal stage  
-- **Educational tools** — remember student progress, weak areas, learning style  
-
----
-
----
-
-## Roadmap
-
-### Collective memory _(coming soon)_
-
-App-level memory extracted across all your users — controlled by the developer. Surfaces patterns, preferences, and aggregate signals from every conversation.
+Convenience method for a single exchange.
 
 ```python
-# Per-user memory (available now)
-context = mem.get("user_123", query=user_message)
-
-# Collective memory (coming soon) — app-level, across all users
-collective = mem.collective.get(query="what do most users ask about?")
-
-# Combine both for maximum context
-prompt = f"{collective}\n\n{context}\n\nUser: {user_message}"
+mem.ingest_conversation("user_123", user_msg, reply)
 ```
 
-Example use cases:
-- E-commerce: "Most users abandon when shipping exceeds $15" → surface proactively
-- Support bots: common issues extracted from all past conversations
-- Coding assistants: patterns from your entire dev user base
+### `mem.health()` → dict
 
-### Memory dashboard _(coming soon)_
-Developer UI to monitor usage, costs, and extraction quality across your app. Track storage growth and retrieval performance — without exposing individual user memory content.
+Health check. Returns service status and component health.
 
-### Memory analytics _(coming soon)_
-Retrieval hit rates, memory growth over time, memory category breakdown (preferences, technical context, personal details). Operational insight without exposing user content.
+### Error Handling
 
----
+```python
+from getmem_ai import (
+    UnauthorizedError,
+    QuotaExceededError,
+    RateLimitedError,
+    ValidationError,
+    InternalError,
+    ServiceUnavailableError,
+    ConnectionError,
+    TimeoutError,
+)
 
-## Status
+try:
+    result = mem.get("user_123", query="hello")
+except UnauthorizedError:
+    print("Check your API key")
+except QuotaExceededError as e:
+    print(f"Quota reset at: {e.reset_at}")
+except RateLimitedError as e:
+    print(f"Retry after {e.retry_after}s")  # SDK retries automatically
+except (InternalError, ServiceUnavailableError):
+    pass  # SDK retries automatically with exponential backoff
+```
 
-Currently in **early access**. We're onboarding developers now.
+**Retryable errors** (handled automatically by the SDK):
 
-**[Join the waitlist at getmem.ai →](https://getmem.ai)**
+| Error | Strategy |
+|-------|----------|
+| `RateLimitedError` (429) | Sleep `retry_after` seconds, retry |
+| `InternalError` (500) | Exponential backoff: 1s, 2s, 4s |
+| `ServiceUnavailableError` (503) | Exponential backoff: 2s, 4s, 8s |
 
----
+**Non-retryable errors** (fix required):
 
-## LLM-readable docs
+| Error | Cause |
+|-------|-------|
+| `UnauthorizedError` (401) | Invalid or missing API key |
+| `QuotaExceededError` (402) | Monthly quota exhausted |
+| `ForbiddenError` (403) | API key lacks required scope |
+| `NotFoundError` (404) | Resource not found |
+| `ValidationError` (422) | Invalid request body |
 
-- [`/llms.txt`](https://getmem.ai/llms.txt) — summary for AI crawlers  
-- [`/llms-full.txt`](https://getmem.ai/llms-full.txt) — full documentation  
+## Custom Base URL
 
----
+For local development or self-hosted:
 
-*© 2026 getmem.ai*
+```python
+mem = getmem.init("gm_live_...", base_url="http://localhost:8001")
+```
+
+## Links
+
+- **Docs & dashboard:** [platform.getmem.ai](https://platform.getmem.ai)
+- **Website:** [getmem.ai](https://getmem.ai)
+- **npm (JS/TS):** [npmjs.com/package/getmem](https://npmjs.com/package/getmem)
+- **GitHub (JS SDK):** [github.com/getmem-ai/getmem-js](https://github.com/getmem-ai/getmem-js)
+- **Issues:** [github.com/getmem-ai/getmem/issues](https://github.com/getmem-ai/getmem/issues)
