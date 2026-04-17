@@ -1,0 +1,54 @@
+User-agent: *
+Allow: /
+
+# LLM crawlers — welcome, read everything
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: GoogleExtendedBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Omgilibot
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+# LLM-readable documentation
+# Summary: https://getmem.ai/llms.txt
+# Full docs: https://getmem.ai/llms-full.txt
+
+Sitemap: https://getmem.ai/sitemap.xml
