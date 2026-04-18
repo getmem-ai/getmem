@@ -51,4 +51,9 @@ Allow: /
 # Summary: https://getmem.ai/llms.txt
 # Full docs: https://getmem.ai/llms-full.txt
 
+# Content Signals (https://contentsignals.org/)
+# We welcome AI agents using our content for answering questions and API discovery.
+# We do not consent to use of this content for AI model training.
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
 Sitemap: https://getmem.ai/sitemap.xml
